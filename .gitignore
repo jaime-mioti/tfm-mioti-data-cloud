@@ -1,0 +1,5 @@
+#No queremos subir este tipo de archivos al repo
+__pycache__
+.venv
+.env
+.vscode/
