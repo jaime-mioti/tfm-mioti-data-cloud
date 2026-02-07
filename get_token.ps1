@@ -8,7 +8,7 @@ Get-Content .env | ForEach-Object {
 $Bytes = [System.Text.Encoding]::UTF8.GetBytes("${ApiKey}:${Secret}")
 $Encoded = [Convert]::ToBase64String($Bytes)
 
-# 3. Hacer la petición 
+# 3. Hacer la petición del token
 $Headers = @{
     "Authorization" = "Basic $Encoded"
     "Content-Type"  = "application/x-www-form-urlencoded"
@@ -21,5 +21,11 @@ $Body = @{
 
 $Response = Invoke-RestMethod -Method Post -Uri "https://api.idealista.com/oauth/token" -Headers $Headers -Body $Body
 
-# 4. Imprimir solo el token
-Write-Host $Response
+# 4. Escribir el token en el archivo .env
+$Token = $Response.access_token
+
+# Leemos el archivo, quitamos la línea de ACCESS_TOKEN anterior si existe, y añadimos la nueva
+$CleanContent = Get-Content .env | Where-Object { $_ -notmatch "^ACCESS_TOKEN=" }
+$CleanContent + "ACCESS_TOKEN=$Token" | Set-Content .env
+
+Write-Host "Token guardado correctamente en .env" -ForegroundColor Green
