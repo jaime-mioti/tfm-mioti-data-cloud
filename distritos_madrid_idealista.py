@@ -8,7 +8,7 @@ load_dotenv()
 
 # --- CONFIGURACIÓN MANUAL ---
 # Cambia este nombre por el distrito que quieras descargar (ej: "21_Barajas")
-DISTRICT_TO_FETCH = "05_Chamartin" 
+DISTRICT_TO_FETCH = "10_Latina" 
 # ----------------------------
 
 # Lista de los 21 Distritos con el formato de ID largo (Madrid Capital)
