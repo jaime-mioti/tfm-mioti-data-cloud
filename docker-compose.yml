@@ -1,15 +1,49 @@
+version: '3.8'
+
 services:
   db:
     image: postgis/postgis:15-3.3 
+    container_name: tfm_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pass1234
       POSTGRES_DB: tfm
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tfm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tfm_network
+
+  streamlit:
+    build: .
+    container_name: tfm_web
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app  # Sincroniza tu carpeta actual con el contenedor
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=tfm
+      - DB_USER=postgres
+      - DB_PASS=pass1234
+    depends_on:
+      db:
+        condition: service_healthy
+    # El truco para Windows: forzar a Streamlit a vigilar cambios
+    command: streamlit run app.py --server.fileWatcherType poll
+    networks:
+      - tfm_network
+
+networks:
+  tfm_network:
+    driver: bridge
 
 volumes:
   postgres_data:
-

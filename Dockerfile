@@ -1,13 +1,24 @@
-# Usamos una imagen ligera de Python
-FROM    Python 3.11.3 
-# Directorio de trabajo dentro del contenedor
+# 1. Usamos una versión ligera y estable
+FROM python:3.11-slim
+
+# 2. Instalamos dependencias del sistema para PostgreSQL y compilación
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Directorio de trabajo
 WORKDIR /app
-#Copiamos los requisitos e instalamos
+
+# 4. Instalamos las librerías de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-#Copiamos el resto del código
-#COPY . .
+# 5. Copiamos el código (Descomenta esto para que Docker vea tu app.py)
+COPY . .
 
-#Comando para ejecutar la app
-#CMD ["python", "main.py"]
+# 6. Exponemos el puerto de Streamlit
+EXPOSE 8501
+
+# 7. Comando específico para Streamlit
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
