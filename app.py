@@ -26,7 +26,8 @@ try:
     sel_dist_formateados = st.sidebar.multiselect(
         "Filtrar por distrito:", 
         options=opciones_distritos, 
-        default=opciones_distritos
+        default=None,
+        placeholder="Selecciona uno o varios distritos..."
     )
     
     distritos_seleccionados = [d.split(" (")[0] for d in sel_dist_formateados]
@@ -50,8 +51,8 @@ try:
         (df_raw['distrito'].isin(distritos_seleccionados)) & 
         (df_raw['precio'] >= float(min_sel)) &          
         (df_raw['precio'] <= precio_max_val) &
-        (df_raw['habitaciones'] >= min_hab) &
-        (df_raw['baños'] >= min_ban)
+        (df_raw['n_habitaciones'] >= min_hab) &
+        (df_raw['n_baños'] >= min_ban)
     ].dropna(subset=['lat', 'lon'])
     
     df, _, _ = apply_color_logic(df)
