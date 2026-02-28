@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, Text, ForeignKey, Numeric
 from sqlalchemy.dialects.postgresql import JSONB
 from geoalchemy2 import Geometry
 from sqlalchemy.orm import declarative_base
@@ -49,3 +49,31 @@ class InmuebleNLP(Base):
     __table_args__ = {'schema': 'public'}
     id = Column(String(50), ForeignKey('public.inmuebles.id', ondelete='CASCADE'), primary_key=True)
     description = Column(Text)
+    
+    
+class PoblacionBarrios(Base):
+    __tablename__ = 'poblacion_barrios'
+    cod_barrio = Column(Integer, primary_key=True) 
+    barrio = Column(String)
+    distrito = Column(String)
+    cod_distrito = Column(Integer, primary_key=True)
+    num_personas = Column(Integer)
+    num_personas_hombres = Column(Integer)
+    num_personas_mujeres = Column(Integer)
+    
+class IndicadorDistrito(Base):
+    __tablename__ = 'indicadores_madrid'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cod_distrito = Column(Integer)
+    distrito = Column(String(100))
+    cod_barrio = Column(Integer)
+    barrio = Column(String(100))
+    categoria_1 = Column(String(255))
+    categoria_2 = Column(String(255))
+    indicador_nivel1 = Column(String(255))
+    indicador_nivel2 = Column(String(255))
+    indicador_nivel3 = Column(String(255))
+    unidad_indicador = Column(String(100))
+    indicador_completo = Column(Text)
+    valor_indicador = Column(Numeric)
