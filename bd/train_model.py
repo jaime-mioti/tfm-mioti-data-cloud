@@ -20,31 +20,22 @@ def train_and_export():
 
     # 2. Preprocesamiento de variables categóricas
     # 'estado' suele tener nulos, los marcamos como 'unknown'
+    df['tipo_propiedad'] = df['tipo_propiedad'].map({
+        'flat': 'Piso', 'penthouse': 'Ático', 'chalet': 'Chalet', 
+        'duplex': 'Dúplex', 'studio': 'Estudio', 'countryHouse': 'Casa Rústica'
+    })  
+    df['estado'] = df['estado'].map({'good': 'En buen estado', 'renew': 'Necesita refoma', 'newdevelopment': 'Obra nueva'})
     df['estado'] = df['estado'].fillna('unknown')
     
-    # 'tipo_detalle' en tu CSV viene como string de dict: "{'typology': 'flat'}"
-    # Vamos a limpiar eso para que el modelo solo vea 'flat', 'penthouse', etc.
-    def clean_typology(x):
-        if pd.isna(x) or '{' not in str(x): return 'flat'
-        try:
-            # Una limpieza rápida para sacar el valor
-            import ast
-            d = ast.literal_eval(x)
-            return d.get('typology', 'flat')
-        except:
-            return 'flat'
-            
-    df['tipo_detalle_clean'] = df['tipo_detalle'].apply(clean_typology)
-
     # 3. Definición de Features
     # Variables numéricas y categóricas
-    features = ['tamaño_m2', 'n_habitaciones', 'n_baños', 'barrio', 'estado', 'tipo_detalle_clean']
+    features = ['tamaño_m2', 'n_habitaciones', 'n_baños', 'barrio', 'estado', 'tipo_propiedad']
     X = df[features]
     y = df['precio']
 
     # 4. Pipeline con OneHotEncoder para las 3 columnas de texto
     preprocessor = ColumnTransformer(transformers=[
-        ('cat', OneHotEncoder(handle_unknown='ignore'), ['barrio', 'estado', 'tipo_detalle_clean'])
+        ('cat', OneHotEncoder(handle_unknown='ignore'), ['barrio', 'estado', 'tipo_propiedad'])
     ], remainder='passthrough')
 
     model_pipeline = Pipeline(steps=[
@@ -68,7 +59,7 @@ def train_and_export():
         "unique_values": {
             "barrios": sorted(df['barrio'].unique().tolist()),
             "estados": sorted(df['estado'].unique().tolist()),
-            "tipos": sorted(df['tipo_detalle_clean'].unique().tolist())
+            "tipos": sorted(df['tipo_propiedad'].unique().tolist())
         }
     }
     
