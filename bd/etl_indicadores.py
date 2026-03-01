@@ -1,8 +1,11 @@
+"""
+Script para insertar los indicadores de los barrios en su respectiva tabla
+"""
 import pandas as pd
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from schemas_bd import IndicadorDistrito  # Nombre de la nueva clase
+from bd.utils import IndicadorDistrito, limpiar_valor  
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -13,24 +16,13 @@ engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
 
-def limpiar_valor(valor):
-    """Convierte el valor del indicador a float, manejando posibles formatos europeos"""
-    if pd.isna(valor) or valor == '':
-        return 0.0
-    if isinstance(valor, str):
-        # Si viene con coma decimal, la cambiamos por punto
-        valor = valor.replace('.', '').replace(',', '.')
-    try:
-        return float(valor)
-    except ValueError:
-        return 0.0
 
+#Funcion principal 
 def etl_indicadores(ruta_csv):
-    # 1. Cargar CSV
-    # Nota: He añadido encoding latin1 por si el utf-8 da error con eñes/acentos de Madrid
+    # Cargar CSV
     df = pd.read_csv(ruta_csv, sep=';')
 
-    # 2. Filtros y selección de columnas solicitados
+    # Filtros y selección de columnas solicitados
     df = df[df['año'] == 2025]
     
     columnas_interes = [
@@ -42,10 +34,10 @@ def etl_indicadores(ruta_csv):
     # Aseguramos que existan las columnas antes de filtrar
     df = df[columnas_interes]
 
-    print(f"Procesando {len(df)} registros de indicadores para el año 2025...")
+    print(f"Procesando {len(df)} registros de indicadores...")
 
     for _, row in df.iterrows():
-        # 3. Mapeo al objeto de la base de datos
+        # Mapeo al objeto de la base de datos definido en schemas_bd
         nuevo_registro = IndicadorDistrito(
             cod_distrito=int(row['cod_distrito']) if pd.notna(row['cod_distrito']) else None,
             distrito=str(row['distrito']).strip(),
@@ -61,11 +53,11 @@ def etl_indicadores(ruta_csv):
             valor_indicador=limpiar_valor(row['valor_indicador'])
         )
 
-        session.add(nuevo_registro) # Usamos add porque no hay una PK natural única en el CSV
+        session.add(nuevo_registro) 
 
     try:
         session.commit()
-        print("¡ETL de Indicadores finalizada con éxito!")
+        print("Importación exitosa")
     except Exception as e:
         session.rollback()
         print(f"Error en la inserción: {e}")

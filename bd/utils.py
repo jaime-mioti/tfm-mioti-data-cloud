@@ -1,9 +1,38 @@
+"""
+Script que reune funciones auxiliares y que también define el modelo de datos de SQLAlchemy para todas las tablas excepto barrios_geo
+"""
 from sqlalchemy import Column, Integer, String, Float, Boolean, Text, ForeignKey, Numeric
 from sqlalchemy.dialects.postgresql import JSONB
 from geoalchemy2 import Geometry
 from sqlalchemy.orm import declarative_base
+import pandas as pd
 Base = declarative_base()
 
+#Función auxiliar que convierte un valor en número decimal, corrigiendo el formato y devolviendo 0 si no es válido.
+def limpiar_valor(valor):
+    
+    if pd.isna(valor) or valor == '':
+        return 0.0
+    if isinstance(valor, str):
+        # Si viene con coma decimal, la cambiamos por punto
+        valor = valor.replace('.', '').replace(',', '.')
+    try:
+        return float(valor)
+    except ValueError:
+        return 0.0
+#Funciñon auxiliar que convierte un valor en número entero, eliminando separadores de miles y devolviendo 0 si no es válido.
+def limpiar_entero(valor):
+    
+    if pd.isna(valor) or valor == '':
+        return 0
+    if isinstance(valor, str):
+        # Quitamos el punto de miles (ej: 145.411 -> 145411)
+        valor = valor.replace('.', '').strip()
+    try:
+        return int(valor)
+    except ValueError:
+        return 0
+#Definicion tabla public.inmuebles
 class Inmueble(Base):
     __tablename__ = 'inmuebles'
     __table_args__ = {'schema': 'public'}
@@ -31,26 +60,25 @@ class Inmueble(Base):
     precio_m2 = Column(Float)
     tipo_detalle = Column(JSONB)
     texto_sugerido = Column(JSONB)
-
+#Definicion tabla public.raw_data
 class RawData(Base):
     __tablename__ = 'raw_data'
     __table_args__ = {'schema': 'public'}
     id = Column(String(50), ForeignKey('public.inmuebles.id', ondelete='CASCADE'), primary_key=True)
     raw_data = Column(JSONB)
-
+#Definicion tabla public.idealista_reference
 class IdealistaReference(Base):
     __tablename__ = 'idealista_reference'
     __table_args__ = {'schema': 'public'}
     id = Column(String(50), ForeignKey('public.inmuebles.id', ondelete='CASCADE'), primary_key=True)
     url = Column(String(200))
-
+#Definicion tabla public.inmueble_nlp
 class InmuebleNLP(Base):
     __tablename__ = 'inmuebles_nlp'
     __table_args__ = {'schema': 'public'}
     id = Column(String(50), ForeignKey('public.inmuebles.id', ondelete='CASCADE'), primary_key=True)
     description = Column(Text)
-    
-    
+#Definicion tabla public.poblacion_barrios        
 class PoblacionBarrios(Base):
     __tablename__ = 'poblacion_barrios'
     cod_barrio = Column(Integer, primary_key=True) 
@@ -60,7 +88,7 @@ class PoblacionBarrios(Base):
     num_personas = Column(Integer)
     num_personas_hombres = Column(Integer)
     num_personas_mujeres = Column(Integer)
-    
+#Definicion tabla public.indicadores_madrid    
 class IndicadorDistrito(Base):
     __tablename__ = 'indicadores_madrid'
 

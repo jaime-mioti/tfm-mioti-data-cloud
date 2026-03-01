@@ -1,21 +1,24 @@
+"""
+Script para insertar los json de los distritos en la bd
+"""
+
 import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
-from schemas_bd import Inmueble, RawData, IdealistaReference, InmuebleNLP
+from bd.utils import Inmueble, RawData, IdealistaReference, InmuebleNLP
 from dotenv import load_dotenv, find_dotenv
 import os 
 
 load_dotenv(find_dotenv())
-# Configuración y Conexión
+# Configuración de conexión
 DATABASE_URL = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 # Función de Procesamiento
-
 def importar_json(ruta_archivo):
     with open(ruta_archivo, 'r', encoding='utf-8') as f:
         datos = json.load(f)
@@ -57,7 +60,7 @@ def importar_json(ruta_archivo):
         ref = IdealistaReference(id=prop_id, url=f"https://www.idealista.com/inmueble/{prop_id}/")
         nlp = InmuebleNLP(id=prop_id, description=item.get('description'))
 
-        # Insertar en orden 
+        # Insertar en orden por las foreign key declaradas
         session.merge(nuevo_inmueble)
         session.merge(raw)
         session.merge(ref)
@@ -68,7 +71,7 @@ def importar_json(ruta_archivo):
         print(f"Éxito: Se han procesado e importado {len(datos)} registros en las 4 tablas.")
     except Exception as e:
         session.rollback()
-        print(f"Error crítico: {e}")
+        print(f"Error: {e}")
     finally:
         session.close()
 
