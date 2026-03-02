@@ -1,8 +1,62 @@
+import os
+import hmac
 import streamlit as st
 from data_utils import load_data, load_geo_data, apply_color_logic
 
 # --- CONFIGURACIÓN ---
 st.set_page_config(page_title="TFM - Madrid Real Estate Explorer", layout="wide")
+
+def require_login() -> None:
+    """Bloquea la app hasta que el usuario se autentique.
+
+    Se apoya en st.session_state para recordar el login durante la sesión.
+    """
+
+    # 1) Si ya hay una sesión autenticada, no pedimos credenciales otra vez.
+    if st.session_state.get("auth_ok", False):
+        return
+
+    # 2) Leemos las credenciales "válidas" desde variables de entorno.
+    #    (Mejor práctica: no hardcodear passwords en el código.)
+    valid_user = os.getenv("APP_USER", "")
+    valid_pass = os.getenv("APP_PASS", "")
+
+    # Si no están configuradas, no tiene sentido pedir login (nadie podrá entrar).
+    if not valid_user or not valid_pass:
+        st.error("Faltan APP_USER / APP_PASS en variables de entorno (docker-compose/.env).")
+        st.stop()
+
+    # 3) UI del login.
+    st.title("🔐 Bienvenido al TFM de Madrid Real Estate Explorer")
+
+    # Usamos un form para que la validación ocurra solo al pulsar el botón.
+    with st.form("login_form", clear_on_submit=False):
+        user = st.text_input("Usuario")
+        pwd = st.text_input("Contraseña", type="password")
+        submitted = st.form_submit_button("Entrar")
+
+    # 4) Validación solo cuando el usuario pulsa "Entrar".
+    if submitted:
+        # Comparación segura (evita filtraciones por timing; mejor que ==)
+        user_ok = hmac.compare_digest(user, valid_user)
+        pass_ok = hmac.compare_digest(pwd, valid_pass)
+
+        if user_ok and pass_ok:
+            # Guardamos el estado de autenticación para el resto de la sesión.
+            st.session_state["auth_ok"] = True
+            # Forzamos rerun para que la app continúe (ya autenticada).
+            st.rerun()
+        else:
+            st.error("Usuario o contraseña incorrectos.")
+
+    # 5) Cortamos la ejecución aquí si no hay login.
+    #    Importante: evita que se carguen datos, se conecte a BD, etc.
+    st.stop()
+
+
+# Ejecutamos el guard al principio (antes de cargar datos).
+require_login()
+
 
 st.markdown("""
     <style>
@@ -60,7 +114,11 @@ try:
     # GUARDAR EN SESSION STATE
     st.session_state['df'] = df
     st.session_state['df_geo_raw'] = df_geo_raw
-
+    
+    # Logout en sidebar.
+    if st.sidebar.button("Cerrar sesión"):
+        st.session_state["auth_ok"] = False
+        st.rerun()
     # NAVEGACIÓN
     pg = st.navigation([
         st.Page("views/mapa.py", title="📍 Mapa de Mercado", default=True),

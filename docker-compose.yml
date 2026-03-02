@@ -34,6 +34,10 @@ services:
       - DB_NAME=tfm
       - DB_USER=postgres
       - DB_PASS=pass1234
+
+      # Login Streamlit
+      - APP_USER=admin
+      - APP_PASS=UnaPasswordFuerte
     depends_on:
       db:
         condition: service_healthy
