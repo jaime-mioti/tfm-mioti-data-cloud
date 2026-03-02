@@ -1,6 +1,7 @@
 import streamlit as st
 from data_utils import format_descripcion_fisica, load_prediction_model, load_data
 import pandas as pd
+import numpy as np
 import json
 
 # --- CONFIGURACIÓN Y CARGA ---
@@ -53,13 +54,16 @@ if st.session_state.vista_actual == "tasador":
             # 1. Predicción del Modelo
             input_data = pd.DataFrame([[m2, habs, banos, barrio_sel, estado, tipo]], 
                                      columns=['tamaño_m2', 'n_habitaciones', 'n_baños', 'barrio', 'estado', 'tipo_propiedad'])
-            pred = model_assets["model"].predict(input_data)[0]
-            rmse = model_assets["rmse"]
-
+            pred_log = model_assets["model"].predict(input_data)[0]
+            rmse_log = model_assets["rmse_log"]
+            # Volvemos a escala real
+            pred = np.exp(pred_log)
+            lower = np.exp(pred_log - 1.96 * rmse_log)
+            upper = np.exp(pred_log + 1.96 * rmse_log)
             st.success(f"### Valor estimado: {int(pred):,} €".replace(",", "."))
             st.markdown(f"""
                 <div style="background-color: #f0f4f8; padding: 20px; border-radius: 10px; border-left: 5px solid #2e7d32; color: #1e3a8a; margin-bottom: 25px;">
-                    Rango de mercado esperado: <b>{int(pred - rmse):,} €</b> - <b>{int(pred + rmse):,} €</b>
+                    Rango de mercado esperado: <b>{int(lower):,} €</b> - <b>{int(upper):,} €</b>
                 </div>
             """, unsafe_allow_html=True)
 

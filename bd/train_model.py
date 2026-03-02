@@ -1,4 +1,8 @@
+"""
+Script para entrenar un modelo de Regresion Lineal
+"""
 import pandas as pd
+import numpy as np
 import pickle
 from sqlalchemy import create_engine
 from sklearn.linear_model import LinearRegression
@@ -14,12 +18,13 @@ load_dotenv(find_dotenv())
 DATABASE_URL = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 engine = create_engine(DATABASE_URL)
 
+# Funcion principal que se encarga de coger la info de la base de datos y entrenar un modelo de sklearn
 def train_and_export():
-    # 1. Carga desde bd
+    # Carga desde bd
     df = pd.read_sql("SELECT * FROM public.inmuebles", con=engine)
 
-    # 2. Preprocesamiento de variables categóricas
-    # 'estado' suele tener nulos, los marcamos como 'unknown'
+    # Preprocesamiento de variables categóricas
+    # 'estado' viene con nulos, los marcamos como 'unknown'
     df['tipo_propiedad'] = df['tipo_propiedad'].map({
         'flat': 'Piso', 'penthouse': 'Ático', 'chalet': 'Chalet', 
         'duplex': 'Dúplex', 'studio': 'Estudio', 'countryHouse': 'Casa Rústica'
@@ -27,13 +32,13 @@ def train_and_export():
     df['estado'] = df['estado'].map({'good': 'En buen estado', 'renew': 'Necesita refoma', 'newdevelopment': 'Obra nueva'})
     df['estado'] = df['estado'].fillna('unknown')
     
-    # 3. Definición de Features
     # Variables numéricas y categóricas
     features = ['tamaño_m2', 'n_habitaciones', 'n_baños', 'barrio', 'estado', 'tipo_propiedad']
     X = df[features]
-    y = df['precio']
+    # Modelamos sobre el logaritmo del precio
+    y = np.log(df['precio'])
 
-    # 4. Pipeline con OneHotEncoder para las 3 columnas de texto
+    # Pipeline con OneHotEncoder para las 3 columnas de texto
     preprocessor = ColumnTransformer(transformers=[
         ('cat', OneHotEncoder(handle_unknown='ignore'), ['barrio', 'estado', 'tipo_propiedad'])
     ], remainder='passthrough')
@@ -43,17 +48,17 @@ def train_and_export():
         ('regressor', LinearRegression())
     ])
 
-    # 5. Entrenamiento
+    # Entrenamiento
     model_pipeline.fit(X, y)
 
-    # 6. Cálculo de RMSE para el intervalo
-    preds = model_pipeline.predict(X)
-    rmse = root_mean_squared_error(y, preds)
+    # Cálculo de RMSE para el intervalo
+    preds_log = model_pipeline.predict(X)
+    rmse_log = root_mean_squared_error(y, preds_log)
 
-    # 7. Guardar en PKL
+    # Guardar en PKL
     model_data = {
         "model": model_pipeline,
-        "rmse": rmse,
+        "rmse": rmse_log,
         "features": features,
         # Guardamos los valores únicos para los selects de la App
         "unique_values": {
