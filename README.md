@@ -1,8 +1,8 @@
 ## 🛠️ Configuración en Windows (PowerShell) para reproducir el proyecto completo
 
-Requiere **API_KEY** y **SECRET** de idealista en un archivo .env
-Requiere tener instalado Docker.
-Ha sido probado en python 3.11.3 
+- Requiere **API_KEY** y **SECRET** de idealista en un archivo .env
+- Requiere tener instalado Docker.
+- Ha sido probado en python 3.11.3 
 
 ### 1. Instalación de uv
 ```
