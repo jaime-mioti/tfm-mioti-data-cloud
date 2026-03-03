@@ -6,12 +6,15 @@ import numpy as np
 import pickle
 from sqlalchemy import create_engine
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import root_mean_squared_error, r2_score
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from dotenv import load_dotenv, find_dotenv
 import os 
+from utils import parse_parking
+import warnings
+warnings.filterwarnings("ignore")
 
 load_dotenv(find_dotenv())
 # Configuración y Conexión
@@ -30,10 +33,13 @@ def train_and_export():
         'duplex': 'Dúplex', 'studio': 'Estudio', 'countryHouse': 'Casa Rústica'
     })  
     df['estado'] = df['estado'].map({'good': 'En buen estado', 'renew': 'Necesita refoma', 'newdevelopment': 'Obra nueva'})
-    df['estado'] = df['estado'].fillna('unknown')
+    df['estado'] = df['estado'].fillna('No especificar')
     
+    df['es_exterior'] = df['es_exterior'].fillna(False).astype(int)
+    df['tiene_ascensor'] = df['tiene_ascensor'].fillna(False).astype(int)
+    df['tiene_parking'] = df['parking'].apply(parse_parking).astype(int)
     # Variables numéricas y categóricas
-    features = ['tamaño_m2', 'n_habitaciones', 'n_baños', 'barrio', 'estado', 'tipo_propiedad']
+    features = ['tamaño_m2', 'n_habitaciones', 'n_baños', 'barrio', 'estado', 'tipo_propiedad', 'es_exterior', 'tiene_ascensor', 'tiene_parking']
     X = df[features]
     # Modelamos sobre el logaritmo del precio
     y = np.log(df['precio'])
@@ -51,14 +57,15 @@ def train_and_export():
     # Entrenamiento
     model_pipeline.fit(X, y)
 
-    # Cálculo de RMSE para el intervalo
+    # Cálculo de metricas del modelo
     preds_log = model_pipeline.predict(X)
     rmse_log = root_mean_squared_error(y, preds_log)
-
+    r2 = r2_score(y, preds_log)
+    print(f"📈 R² Score:           {r2:.4f}")
     # Guardar en PKL
     model_data = {
         "model": model_pipeline,
-        "rmse": rmse_log,
+        "rmse_log": rmse_log,
         "features": features,
         # Guardamos los valores únicos para los selects de la App
         "unique_values": {

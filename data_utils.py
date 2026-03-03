@@ -59,7 +59,8 @@ def load_data():
 @st.cache_data
 def load_geo_data():
     engine = get_engine()
-    query = "SELECT distrito, ST_AsGeoJSON(geometry) as geom FROM barrios_geo;"
+    query = """SELECT bg.distrito, bg.barrio, pb.num_personas, pb.num_personas_hombres, pb.num_personas_mujeres, ST_AsGeoJSON(geometry) as geom FROM barrios_geo bg
+            lEFT JOIN poblacion_barrios pb ON bg.barrio = pb.barrio;"""
     df_geo = pd.read_sql(query, engine)
     df_geo['distrito'] = df_geo['distrito'].str.strip()
     return df_geo

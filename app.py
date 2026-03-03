@@ -97,8 +97,8 @@ try:
     precio_max_val = float('inf') if max_sel == "Sin límite" else float(max_sel)
     
     col_f1, col_f2 = st.sidebar.columns(2)
-    min_hab = col_f1.selectbox("Habitaciones", [0, 1, 2, 3, 4], index=0)
-    min_ban = col_f2.selectbox("Baños", [0, 1, 2, 3], index=0)
+    min_hab = col_f1.selectbox("Mín Habitaciones", [0, 1, 2, 3, 4], index=0)
+    min_ban = col_f2.selectbox("Mín Baños", [0, 1, 2, 3], index=0)
 
     # Filtrado Dinámico
     df = df_raw[
@@ -114,7 +114,7 @@ try:
     # GUARDAR EN SESSION STATE
     st.session_state['df'] = df
     st.session_state['df_geo_raw'] = df_geo_raw
-    
+    st.session_state['distritos_seleccionados'] = distritos_seleccionados
     # Logout en sidebar.
     if st.sidebar.button("Cerrar sesión"):
         st.session_state["auth_ok"] = False
@@ -122,7 +122,8 @@ try:
     # NAVEGACIÓN
     pg = st.navigation([
         st.Page("views/mapa.py", title="📍 Mapa de Mercado", default=True),
-        st.Page("views/buscador.py", title="🏠 Buscador Detallado")
+        st.Page("views/buscador.py", title="🏠 Buscador Detallado"),
+        st.Page("views/tasador.py", title="📊 Tasador Vivienda")
     ])
     pg.run()
 

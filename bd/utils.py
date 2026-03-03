@@ -8,6 +8,16 @@ from sqlalchemy.orm import declarative_base
 import pandas as pd
 Base = declarative_base()
 
+# Funcion para extraer el valor del parking
+def parse_parking(x):
+    # SI es nulo o vacio devolvemos False
+    if pd.isna(x) or x == "":
+        return False
+    try:
+        #Cogemos el valor de hasParkingSpace que es un True o False
+        return x.get('hasParkingSpace', False)
+    except:
+        return False
 #Función auxiliar que convierte un valor en número decimal, corrigiendo el formato y devolviendo 0 si no es válido.
 def limpiar_valor(valor):
     
