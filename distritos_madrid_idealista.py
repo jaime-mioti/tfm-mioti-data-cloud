@@ -1,3 +1,6 @@
+"""
+Script para realizar las llamadas a la API de idealista, requiere un access_token valido
+"""
 import subprocess
 import json
 import os
@@ -11,7 +14,7 @@ load_dotenv()
 DISTRICT_TO_FETCH = "10_Latina" 
 # ----------------------------
 
-# Lista de los 21 Distritos con el formato de ID largo (Madrid Capital)
+# Lista de los 21 Distritos con el formato que pide Idealista
 DISTRITOS = {
     "01_Centro": "0-EU-ES-28-07-001-079-01",
     "02_Arganzuela": "0-EU-ES-28-07-001-079-02",
@@ -36,7 +39,8 @@ DISTRITOS = {
     "21_Barajas": "0-EU-ES-28-07-001-079-21"
 }
 
-def llamar_api_con_cuota(location_id, page=1):
+# Funcion que por debajo utiliza powershell para hacer la llamada a la api sobre la informacion que queremos
+def llamar_api(location_id, page=1):
     token = os.getenv("ACCESS_TOKEN")
     temp_file = "temp_call.json"
     
@@ -80,6 +84,7 @@ def llamar_api_con_cuota(location_id, page=1):
         print(f"   ❌ Error ejecución: {e}")
     return None, "0"
 
+# Funcion principal para obtener todos los anuncios de un distrito concreto
 def descargar_un_distrito(nombre):
     if nombre not in DISTRITOS:
         print(f"❌ '{nombre}' no está en la lista.")
@@ -94,7 +99,7 @@ def descargar_un_distrito(nombre):
     print(f"📍 ID: {loc_id}")
 
     while pagina_actual <= total_paginas:
-        res, cuota = llamar_api_con_cuota(loc_id, pagina_actual)
+        res, cuota = llamar_api(loc_id, pagina_actual)
         
         if res and 'elementList' in res:
             pueblo_actual = res['elementList']
@@ -119,18 +124,19 @@ def descargar_un_distrito(nombre):
     else:
         print("\n💀 No se pudo obtener ningún dato.")
 
+# Hubo algun proceso que se paro a la mitad, de ahi esta funcion para hacer descarga parcial
 def descargar_desde_pagina(nombre, pagina_inicio):
     if nombre not in DISTRITOS: return
 
     loc_id = DISTRITOS[nombre]
     todos_los_pisos = []
-    pagina_actual = pagina_inicio # Empezamos en la 34
-    total_paginas = 46 # Ya sabemos que son 46
+    pagina_actual = pagina_inicio 
+    total_paginas = 46 
 
     print(f"🔄 RESCATANDO: {nombre} desde página {pagina_inicio}")
 
     while pagina_actual <= total_paginas:
-        res, cuota = llamar_api_con_cuota(loc_id, pagina_actual)
+        res, cuota = llamar_api(loc_id, pagina_actual)
         
         if res and 'elementList' in res:
             todos_los_pisos.extend(res['elementList'])

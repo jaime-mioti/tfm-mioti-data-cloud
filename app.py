@@ -1,9 +1,11 @@
+"""
+Script principal de la aplicacion streamlit, incluye el login a la aplicacion    
+"""
 import os
 import hmac
 import streamlit as st
 from data_utils import load_data, load_geo_data, apply_color_logic
 
-# --- CONFIGURACIÓN ---
 st.set_page_config(page_title="TFM - Madrid Real Estate Explorer", layout="wide")
 
 def require_login() -> None:
@@ -17,9 +19,8 @@ def require_login() -> None:
         return
 
     # 2) Leemos las credenciales "válidas" desde variables de entorno.
-    #    (Mejor práctica: no hardcodear passwords en el código.)
-    valid_user = os.getenv("APP_USER", "")
-    valid_pass = os.getenv("APP_PASS", "")
+    valid_user = os.getenv("APP_USER")
+    valid_pass = os.getenv("APP_PASS")
 
     # Si no están configuradas, no tiene sentido pedir login (nadie podrá entrar).
     if not valid_user or not valid_pass:
@@ -37,7 +38,6 @@ def require_login() -> None:
 
     # 4) Validación solo cuando el usuario pulsa "Entrar".
     if submitted:
-        # Comparación segura (evita filtraciones por timing; mejor que ==)
         user_ok = hmac.compare_digest(user, valid_user)
         pass_ok = hmac.compare_digest(pwd, valid_pass)
 
@@ -50,14 +50,13 @@ def require_login() -> None:
             st.error("Usuario o contraseña incorrectos.")
 
     # 5) Cortamos la ejecución aquí si no hay login.
-    #    Importante: evita que se carguen datos, se conecte a BD, etc.
     st.stop()
 
 
 # Ejecutamos el guard al principio (antes de cargar datos).
 require_login()
 
-
+# CSS
 st.markdown("""
     <style>
     .property-card-clean { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
@@ -68,15 +67,18 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 try:
+    # Cargamos los datos que se van a utilizar
     df_raw = load_data()
     df_geo_raw = load_geo_data()
     
-    # --- SIDEBAR: FILTROS ---
+    # --- Sección de filtros Streamlit ---
     st.sidebar.header("🔍 Filtros de Búsqueda")
     
+    # Nº de anuncios por distrito
     conteo_distritos = df_raw['distrito'].value_counts()
     opciones_distritos = [f"{d} ({conteo_distritos[d]})" for d in sorted(df_raw['distrito'].unique())]
     
+    # Filtro de distritos
     sel_dist_formateados = st.sidebar.multiselect(
         "Filtrar por distrito:", 
         options=opciones_distritos, 
@@ -86,16 +88,16 @@ try:
     
     distritos_seleccionados = [d.split(" (")[0] for d in sel_dist_formateados]
     
+    # Filtro de precio minimo y maximo
     opciones_min = [0, 50000, 100000, 150000, 200000, 300000, 500000]
     opciones_max = [100000, 200000, 300000, 500000, 1000000, 3000000, 5000000, "Sin límite"]
-
     st.sidebar.write("### Precio (€)")
     col1, col2 = st.sidebar.columns(2)
     min_sel = col1.selectbox("Mín", options=opciones_min, format_func=lambda x: f"{x:,} €" if x != 0 else "Mín")
     max_sel = col2.selectbox("Máx", options=opciones_max, index=len(opciones_max)-1)
-
     precio_max_val = float('inf') if max_sel == "Sin límite" else float(max_sel)
     
+    # Filtro de numero minimo de habitaciones y baño
     col_f1, col_f2 = st.sidebar.columns(2)
     min_hab = col_f1.selectbox("Mín Habitaciones", [0, 1, 2, 3, 4], index=0)
     min_ban = col_f2.selectbox("Mín Baños", [0, 1, 2, 3], index=0)
@@ -115,14 +117,15 @@ try:
     st.session_state['df'] = df
     st.session_state['df_geo_raw'] = df_geo_raw
     st.session_state['distritos_seleccionados'] = distritos_seleccionados
+    
     # Logout en sidebar.
     if st.sidebar.button("Cerrar sesión"):
         st.session_state["auth_ok"] = False
         st.rerun()
     # NAVEGACIÓN
     pg = st.navigation([
-        st.Page("views/mapa.py", title="📍 Mapa de Mercado", default=True),
-        st.Page("views/buscador.py", title="🏠 Buscador Detallado"),
+        st.Page("views/buscador.py", title="🏠 Buscador Detallado", default=True),
+        st.Page("views/mapa.py", title="📍 Mapa de Mercado"),
         st.Page("views/tasador.py", title="📊 Tasador Vivienda")
     ])
     pg.run()

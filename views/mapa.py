@@ -1,9 +1,13 @@
+"""
+Script que incluye toda la logica usada en la visualizacion del mapa interactivo. 
+"""
 import streamlit as st
 import pydeck as pdk
 import json
 import pandas as pd
 import unicodedata
 
+# Funcion auxiliar para normalizar los valores de los barrios (como vienen de 2 origenes distintos)
 def limpiar_texto(texto):
     if not isinstance(texto, str):
         return ""
@@ -16,7 +20,6 @@ df = st.session_state.get('df', None)
 df_geo_raw = st.session_state.get('df_geo_raw', None)
 
 # Necesitamos saber qué distritos están seleccionados para resaltar sus barrios
-# Nota: Asegúrate de que en tu app principal guardes 'distritos_seleccionados' en session_state
 distritos_activos = st.session_state.get('distritos_seleccionados', [])
 
 st.header("📍 Análisis del Mercado por Barrio")

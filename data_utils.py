@@ -1,3 +1,6 @@
+"""
+Script que reune funciones usadas por la aplicacion streamlit
+"""
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine
@@ -6,6 +9,7 @@ import time
 import joblib
 from pathlib import Path
 
+# Funcion para gestionar la conexion a postgre
 def get_engine():
     url = f'postgresql://{os.getenv("DB_USER")}:{os.getenv("DB_PASS")}@{os.getenv("DB_HOST")}:{os.getenv("DB_PORT")}/{os.getenv("DB_NAME")}'
     for i in range(5):
@@ -17,6 +21,7 @@ def get_engine():
             if i < 4: time.sleep(2)
     return create_engine(url)
 
+# Funcion para cargar los datos de idealista
 @st.cache_data
 def load_data():
     engine = get_engine()
@@ -46,6 +51,7 @@ def load_data():
     LEFT JOIN public.idealista_reference ir ON i.id = ir.id;
     """
     df = pd.read_sql(query, engine)
+    # Preprocesamiento
     df['foto'] = df['foto'].fillna("https://via.placeholder.com/150?text=Sin+Foto")
     df['distrito'] = df['distrito'].str.strip()
     df['tipo'] = df['tipo'].map({
@@ -56,6 +62,7 @@ def load_data():
           
     return df
 
+# Funcion para cargar de la bd la informacion del mapa interactivo
 @st.cache_data
 def load_geo_data():
     engine = get_engine()
@@ -65,10 +72,10 @@ def load_geo_data():
     df_geo['distrito'] = df_geo['distrito'].str.strip()
     return df_geo
 
-# Obtener la ruta de la carpeta donde está este archivo (la raíz)
+# Obtener la ruta de la carpeta donde está el modelo
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "modelo_tasacion_inmobiliario.pkl"
-
+# Funcion para cargar el modelo 
 @st.cache_resource # Usamos cache_resource porque es un objeto pesado
 def load_prediction_model():
     if not MODEL_PATH.exists():
@@ -76,6 +83,7 @@ def load_prediction_model():
         return None
     return joblib.load(MODEL_PATH)
 
+# Funcion para aplicar la logica de colores (mas caro = mas oscuro)
 def apply_color_logic(df):
     if df.empty: return df, 0, 0
     pmin, pmax = df['precio'].quantile(0.05), df['precio'].quantile(0.95)
@@ -85,6 +93,7 @@ def apply_color_logic(df):
     df['fill_color'] = df['precio'].apply(color_calc)
     return df, pmin, pmax
 
+# Funcion para presentar los resultados de el buscador detallado como deseamos
 def format_descripcion_fisica(row):
     # 1. Gestionar tipos que no muestran planta
     tipos_sin_planta = ['Chalet', 'Casa Rústica']

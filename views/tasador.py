@@ -1,10 +1,12 @@
+"""
+Script que incluye toda la logica del tasador. Requiere de un modelo .pkl previamente entrenado.
+"""
 import streamlit as st
 import pandas as pd
 import numpy as np
 from data_utils import format_descripcion_fisica, load_prediction_model, load_data
 
-# --- CONFIGURACIÓN Y CARGA ---
-# Asegúrate de que load_prediction_model() devuelva el nuevo .pkl con 9 variables
+# Carga del modelo
 model_assets = load_prediction_model()
 
 st.set_page_config(page_title="Tasador Inmobiliario", layout="wide")
@@ -30,7 +32,7 @@ else:
 
         st.divider()
         
-        # Bloque de Extras (Nuevas variables)
+        # Bloque de Equipamiento Extra
         st.write("**Equipamiento Adicional**")
         e1, e2, e3 = st.columns(3)
         with e1:
@@ -81,7 +83,7 @@ else:
         st.divider()
         st.subheader("🏠 Viviendas similares en la zona")
         df_full = load_data()
-            
+        # Simplemente hacemos que la similitud sea mismo barrio + mismo n habitaciones     
         similares = df_full[(df_full['barrio'] == barrio_sel) & 
                             (df_full['n_habitaciones'] == habs)].head(3)
         

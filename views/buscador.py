@@ -1,3 +1,6 @@
+"""
+Script que incluye las funcionalidades de la pantalla del buscador detallado, como queremos que aparezca representado en la interfaz
+"""
 import streamlit as st
 from data_utils import format_descripcion_fisica
 import pandas as pd
